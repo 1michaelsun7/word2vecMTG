@@ -4,9 +4,16 @@ import math
 import numpy as np
 import random
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import log_loss
 import string
 import sys
 import tensorflow
+
+print string.punctuation
+
+def cross_entropy_loss(predicted, true):
+	return -1.0*np.sum(np.multiply(true, np.log(predicted + 1e-16)))
 
 def build_dataset(words, vocabulary_size = 50000):
   count = [['UNK', -1]]
@@ -54,6 +61,8 @@ def generate_batch(data, batch_size, num_skips, skip_window):
 	return batch, labels
 
 def main():
+	# modified_punct = string.punctuation.replace("+", "")
+	# modified_punct = modified_punct.replace("-", "")
 	color_dict = {"W": 0, "U": 1, "B": 2, "R": 3, "G": 4, "C": 5}
 
 	with open('MTGcardtextcolors.json') as json_file:
@@ -65,12 +74,14 @@ def main():
 	for key in json_data.keys():
 		card = json_data[key]
 		cardtext = card["text"].encode('utf-8')
+
 		for punct in string.punctuation:
 			cardtext = cardtext.replace(punct, "")
 		standardized_text = cardtext.lower()
 
 		targets.append(card["colors"])
-		sentences.append(standardized_text.split())
+		sentences.append(standardized_text)
+		#sentences.append(standardized_text.split())
 
 	val_cutoff = int(math.floor(0.9*len(sentences)))
 
@@ -79,16 +90,46 @@ def main():
 
 	# Initialize the "CountVectorizer" object, which is scikit-learn's
 	# bag of words tool.  
+	print "==========Initializing bag-of-words...=========="
 	vectorizer = CountVectorizer(analyzer = "word", tokenizer = None, preprocessor = None,
-								stop_words = None, max_features = 50000) 
-	train_data_features = vectorizer.fit_transform(train_set[0])
-	train_data_features = train_data_features.toarray()
-	print train_data_features.shape
+								stop_words = None, max_features = 5000) 
+	train_features = vectorizer.fit_transform(train_set[0])
+	train_features = train_features.toarray()
+	train_labels = np.array(train_set[1], dtype="|S6")
 
-	#SVM_model 
+	val_features = vectorizer.transform(val_set[0])
+	val_features = val_features.toarray()
+	val_labels = np.array(val_set[1])
+	print train_features.shape
+	print train_labels.shape
 
-	# word_model = gensim.models.Word2Vec(sentences, min_count=5)
-	# print word_model.most_similar(positive=['deal', 'damage'], negative=['cards'])
+	vocab = vectorizer.get_feature_names()
+	dist = np.sum(train_features, axis=0)
+
+	# For each, print the vocabulary word and the number of times it 
+	# appears in the training set
+	# for tag, count in zip(vocab, dist):
+	# 	print count, tag
+
+
+	# Random Forest Classifier
+	#
+	#
+	#
+	print "==========Initializing random forest...=========="
+	forest = RandomForestClassifier(n_estimators = 100) 
+
+	forest = forest.fit(train_features, train_labels)
+
+	result = forest.predict(val_features)
+	correct = np.sum(np.multiply(result, val_labels), axis=1)
+	print len(correct[correct == 1])
+	print np.sum(correct)
+	CE = cross_entropy_loss(val_labels, result)
+	print "Cross Entropy Loss: ", CE
+	
+
+
 
 if __name__ == '__main__':
 	main()
