@@ -3,10 +3,10 @@ import json
 import math
 import numpy as np
 import random
+from sklearn.feature_extraction.text import CountVectorizer
 import string
 import sys
 import tensorflow
-print [punct for punct in string.punctuation]
 
 def build_dataset(words, vocabulary_size = 50000):
   count = [['UNK', -1]]
@@ -70,21 +70,20 @@ def main():
 		standardized_text = cardtext.lower()
 
 		targets.append(card["colors"])
-		sentences.append(standardized_text.split(" "))
+		sentences.append(standardized_text.split())
 
 	val_cutoff = int(math.floor(0.9*len(sentences)))
 
-	# build dictionary and reverse dictionary of word counts
-	data, count, dictionary, reverse_dictionary = build_dataset([val for sublist in sentences for val in sublist])
+	train_set = (sentences[:val_cutoff], targets[:val_cutoff])
+	val_set = (sentences[val_cutoff:], targets[val_cutoff:])
 
-	del sentences
-	print('Most common words (+UNK)', count[:5])
-	print('Sample data', data[:10], [reverse_dictionary[i] for i in data[:10]])
-
-	# generate training batch
-	batch, labels = generate_batch(data, batch_size=8, num_skips=2, skip_window=1)
-	for i in range(8):
-		print(batch[i], reverse_dictionary[batch[i]], '->', labels[i, 0], reverse_dictionary[labels[i, 0]])
+	# Initialize the "CountVectorizer" object, which is scikit-learn's
+	# bag of words tool.  
+	vectorizer = CountVectorizer(analyzer = "word", tokenizer = None, preprocessor = None,
+								stop_words = None, max_features = 50000) 
+	train_data_features = vectorizer.fit_transform(train_set[0])
+	train_data_features = train_data_features.toarray()
+	print train_data_features.shape
 
 	#SVM_model 
 
