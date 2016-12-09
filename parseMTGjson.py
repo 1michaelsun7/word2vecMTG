@@ -21,7 +21,7 @@ def main():
 				colorIdentity = ["C"]
 			target_vector = [0]*6
 			for color in colorIdentity:
-				target_vector[color_dict[color]] = 1.0/len(colorIdentity)
+				target_vector[color_dict[color]] = 1.0
 			compressed_card_dict[cardname] = {"text": cardtext, "colors": target_vector}
 			count += 1
 
