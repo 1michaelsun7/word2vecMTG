@@ -2,6 +2,7 @@ import json
 
 def main():
 	color_dict = {"W": 0, "U": 1, "B": 2, "R": 3, "G": 4, "C": 5}
+	color_to_letter = {"White": "W", "Blue": "U", "Black": "B", "Red": "R", "Green": "G"}
 	compressed_card_dict = {}
 
 	count = 0
@@ -18,7 +19,10 @@ def main():
 			try: 
 				colorIdentity = card["colorIdentity"]
 			except KeyError:
-				colorIdentity = ["C"]
+				try:
+					colorIdentity = [color_to_letter[color] for color in card["colors"]]
+				except KeyError:
+					colorIdentity = ["C"]
 			target_vector = [0]*6
 			for color in colorIdentity:
 				target_vector[color_dict[color]] = 1.0
